@@ -1,16 +1,21 @@
-module.export = {
+module.exports = {
     entry: "./src/main",
     output: {
-        filename: "./src/app.js"
+        filename: "./dist/app.js"
     },
+    devtool: 'inline-source-map',
     module: {
-        loaders: [{
-            test: /.ts$/,
-            loader: "ts-loader"
-        }]
+        rules: [
+            // all files with a `.ts` or `.tsx` extension will be handled by `ts-loader`
+            {
+                test: /\.tsx?$/,
+                loader: "ts-loader"
+            }
+        ]
     },
     resolve: {
-        extensions: ["", ".ts", ".js"]
+        // Add `.ts` and `.tsx` as a resolvable extension.
+        extensions: [".ts", ".tsx", ".js"]
     },
-    mode:'development'
+    mode: 'development'
 }

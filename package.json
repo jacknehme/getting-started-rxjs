@@ -1,5 +1,5 @@
 {
-  "name": "getting-started-with-reactive-programming-using-rxjs",
+  "name": "getting-started-rxjs",
   "version": "1.0.0",
   "description": "",
   "scripts": {
@@ -8,16 +8,17 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jacknehme/getting-started-with-reactive-programming-using-rxjs.git"
+    "url": "git+https://github.com/jacknehme/getting-started-rxjs.git"
   },
   "bugs": {
-    "url": "https://github.com/jacknehme/getting-started-with-reactive-programming-using-rxjs/issues"
+    "url": "https://github.com/jacknehme/getting-started-rxjs/issues"
   },
-  "homepage": "https://github.com/jacknehme/getting-started-with-reactive-programming-using-rxjs#readme",
+  "homepage": "https://github.com/jacknehme/getting-started-rxjs#readme",
   "dependencies": {
     "rxjs": "^6.2.0"
   },
   "devDependencies": {
+    "tslint": "^5.10.0",
     "ts-loader": "^4.4.1",
     "typescript": "^2.9.1",
     "typings": "^2.1.1",
