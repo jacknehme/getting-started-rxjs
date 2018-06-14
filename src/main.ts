@@ -1,6 +1,5 @@
-import { from, Observer, Observable } from 'rxjs';
-import { fromEvent } from 'rxjs/observable/fromEvent';
-import { map, filter } from 'rxjs/operators';
+import { from, Observer, fromEvent, Observable } from 'rxjs';
+import { map, filter, delay, flatMap, mergeMap, retry } from 'rxjs/operators';
 /*
 let numbers = from([1, 5, 10]);
 
@@ -72,18 +71,75 @@ source3.subscribe(
     () => console.log("complete")
 );
 
+/* Red dot mouse */
+let circle = document.getElementById('circle');
 let source4 = fromEvent(document, "mousemove")
-    // .pipe(
-    //     map((n: number) => n * 2),
-    //     filter(n => n > 4)
-    // );
-
-    source4.subscribe(
-        value => console.log(value),
-        err => console.log(`error: ${err}`),
-        () => console.log("complete")
+    .pipe(
+        map((e: MouseEvent) => {
+            return {
+                x: e.clientX,
+                y: e.clientY
+            }
+        }),
+        filter(value => value.x < 500),
+        delay(300)
     );
 
+function onNext(value) {
+    // circle.style.left = value.x;
+    // circle.style.top = value.y;
+}
+source4.subscribe(
+    onNext,
+    //value => console.log(value),
+    err => console.log(`error: ${err}`),
+    () => console.log("complete")
+);
 
+
+
+/* load movies json data */
+let button = document.getElementById('button');
+let output = document.getElementById('output');
+
+let click = fromEvent(button, "click");
+
+function load(url: string) {
+    return Observable.create(observer => {
+        let xhr = new XMLHttpRequest();
+
+        xhr.addEventListener("load", () => {
+            if (xhr.status === 200) {
+                let data = JSON.parse(xhr.responseText);
+                observer.next(data);
+                observer.complete();
+            } else {
+                observer.error(xhr.statusText);
+            }
+        });
+
+        xhr.open("GET", url);
+        xhr.send();
+    });
+
+}
+
+function renderMovies(movies) {
+    movies.forEach(m => {
+        let div = document.createElement("div");
+        div.innerText = m.title;
+        output.appendChild(div);
+    });
+}
+
+click.pipe(
+    mergeMap(() => load("moviess.json")),
+    retry(3)
+)
+    .subscribe({
+        next: renderMovies,
+        error: (error) => console.log("Retry 3 times! Errored: ", error),
+        complete: () => console.log("Completed")
+    });
 
 
