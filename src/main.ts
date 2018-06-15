@@ -1,5 +1,5 @@
-import { from, Observer, fromEvent, Observable } from 'rxjs';
-import { map, filter, delay, flatMap, mergeMap, retry } from 'rxjs/operators';
+import { from, Observer, fromEvent, Observable, defer } from 'rxjs';
+import { map, filter, delay, flatMap, mergeMap, retry, retryWhen, scan, takeWhile } from 'rxjs/operators';
 /*
 let numbers = from([1, 5, 10]);
 
@@ -120,8 +120,30 @@ function load(url: string) {
 
         xhr.open("GET", url);
         xhr.send();
-    });
+    }).pipe(
+        //retry(3), 
+        retryWhen(retryStrategy({ attempts: 3, _delay: 1500 }))
+    );
 
+}
+
+function loadWithFetch(url: string) {
+    return defer(() => {
+        return from(fetch(url).then(r => r.json()))
+    });
+}
+
+function retryStrategy({ attempts = 4, _delay = 1000 }) {
+    return function (errors) {
+        return errors.pipe(
+            scan((acc, value) => {
+                console.log(acc, value);
+                return acc + 1;
+            }, 0),
+            takeWhile(acc => acc < attempts),
+            delay(_delay)
+        )
+    }
 }
 
 function renderMovies(movies) {
@@ -132,10 +154,7 @@ function renderMovies(movies) {
     });
 }
 
-click.pipe(
-    mergeMap(() => load("moviess.json")),
-    retry(3)
-)
+click.pipe(mergeMap(() => loadWithFetch("movies.json")))
     .subscribe({
         next: renderMovies,
         error: (error) => console.log("Retry 3 times! Errored: ", error),
