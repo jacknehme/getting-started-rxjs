@@ -1,5 +1,37 @@
-import { from, Observer, fromEvent, Observable, defer } from 'rxjs';
-import { map, filter, delay, flatMap, mergeMap, retry, retryWhen, scan, takeWhile } from 'rxjs/operators';
+import { from, Observer, fromEvent, Observable, defer, of, merge, throwError } from 'rxjs';
+import { map, filter, delay, flatMap, mergeMap, retry, retryWhen, scan, takeWhile, catchError } from 'rxjs/operators';
+import { load, loadWithFetch } from './loader';
+
+// let source5 = merge(
+//     of(1),
+//     from([2, 3, 4]),
+//     throwError(new Error("Stop!")),
+//     of(5)
+// ).pipe(
+//     catchError(e => {
+//         console.log(`caught: ${e}`);
+//         return of(10);
+//     })
+// )
+
+// let source5 = Observable.create( observer => {
+//     observer.next(1);
+//     observer.next(2);
+//     observer.error("Stop!");
+//     // throw new Error("Stop!");
+//     observer.next(3);
+//     observer.complete();
+//     //
+// });
+
+// source5.subscribe(
+//     value => console.log(`value: ${value}`),
+//     error => console.log(`error: ${error}`),
+//     () => console.log(`complete`)
+// )
+
+
+
 /*
 let numbers = from([1, 5, 10]);
 
@@ -46,57 +78,55 @@ source.subscribe(
     () => console.log("complete")
 );
  */
-let numbers3 = [1, 5, 10];
+// let numbers3 = [1, 5, 10];
 
-let source3 = Observable.create(observer => {
-    let index = 0;
-    let produceValue = () => {
-        observer.next(numbers3[index++]);
+// let source3 = Observable.create(observer => {
+//     let index = 0;
+//     let produceValue = () => {
+//         observer.next(numbers3[index++]);
 
-        if (index < numbers3.length) {
-            setTimeout(produceValue, 250);
-        } else {
-            observer.complete();
-        }
-    }
-    produceValue();
-}).pipe(
-    map((n: number) => n * 2),
-    filter(n => n > 4)
-);
+//         if (index < numbers3.length) {
+//             setTimeout(produceValue, 250);
+//         } else {
+//             observer.complete();
+//         }
+//     }
+//     produceValue();
+// }).pipe(
+//     map((n: number) => n * 2),
+//     filter(n => n > 4)
+// );
 
-source3.subscribe(
-    value => console.log(`value: ${value}`),
-    err => console.log(`error: ${err}`),
-    () => console.log("complete")
-);
+// source3.subscribe(
+//     value => console.log(`value: ${value}`),
+//     err => console.log(`error: ${err}`),
+//     () => console.log("complete")
+// );
 
 /* Red dot mouse */
-let circle = document.getElementById('circle');
-let source4 = fromEvent(document, "mousemove")
-    .pipe(
-        map((e: MouseEvent) => {
-            return {
-                x: e.clientX,
-                y: e.clientY
-            }
-        }),
-        filter(value => value.x < 500),
-        delay(300)
-    );
+// let circle = document.getElementById('circle');
+// let source4 = fromEvent(document, "mousemove")
+//     .pipe(
+//         map((e: MouseEvent) => {
+//             return {
+//                 x: e.clientX,
+//                 y: e.clientY
+//             }
+//         }),
+//         filter(value => value.x < 500),
+//         delay(300)
+//     );
 
-function onNext(value) {
-    // circle.style.left = value.x;
-    // circle.style.top = value.y;
-}
-source4.subscribe(
-    onNext,
-    //value => console.log(value),
-    err => console.log(`error: ${err}`),
-    () => console.log("complete")
-);
-
-
+// function onNext(value) {
+//     // circle.style.left = value.x;
+//     // circle.style.top = value.y;
+// }
+// source4.subscribe(
+//     onNext,
+//     //value => console.log(value),
+//     err => console.log(`error: ${err}`),
+//     () => console.log("complete")
+// );
 
 /* load movies json data */
 let button = document.getElementById('button');
@@ -104,47 +134,13 @@ let output = document.getElementById('output');
 
 let click = fromEvent(button, "click");
 
-function load(url: string) {
-    return Observable.create(observer => {
-        let xhr = new XMLHttpRequest();
+// click.pipe(mergeMap(() => load("movies.json")))
+//     .subscribe({
+//         next: renderMovies,
+//         error: (error) => console.log("Retry 3 times! Errored: ", error),
+//         complete: () => console.log("Completed")
+//     });
 
-        xhr.addEventListener("load", () => {
-            if (xhr.status === 200) {
-                let data = JSON.parse(xhr.responseText);
-                observer.next(data);
-                observer.complete();
-            } else {
-                observer.error(xhr.statusText);
-            }
-        });
-
-        xhr.open("GET", url);
-        xhr.send();
-    }).pipe(
-        //retry(3), 
-        retryWhen(retryStrategy({ attempts: 3, _delay: 1500 }))
-    );
-
-}
-
-function loadWithFetch(url: string) {
-    return defer(() => {
-        return from(fetch(url).then(r => r.json()))
-    });
-}
-
-function retryStrategy({ attempts = 4, _delay = 1000 }) {
-    return function (errors) {
-        return errors.pipe(
-            scan((acc, value) => {
-                console.log(acc, value);
-                return acc + 1;
-            }, 0),
-            takeWhile(acc => acc < attempts),
-            delay(_delay)
-        )
-    }
-}
 
 function renderMovies(movies) {
     movies.forEach(m => {
@@ -154,11 +150,21 @@ function renderMovies(movies) {
     });
 }
 
-click.pipe(mergeMap(() => loadWithFetch("movies.json")))
-    .subscribe({
-        next: renderMovies,
-        error: (error) => console.log("Retry 3 times! Errored: ", error),
-        complete: () => console.log("Completed")
-    });
+let subscription = load("movies.json").subscribe(
+    renderMovies,
+    (e) => console.log(`error: ${e}`),
+    () => console.log("Completed")
+);
+
+console.log("subscription",subscription);
+subscription.unsubscribe();
+
+
+// click.pipe(mergeMap(() => loadWithFetch("movies.json")))
+//     .subscribe(
+//         renderMovies,
+//         (e) => console.log(`error: ${e}`),
+//         () => console.log("Completed")
+//     );
 
 
