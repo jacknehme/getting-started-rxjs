@@ -1,1 +1,1 @@
-# getting-started-with-reactive-programming-using-rxjs
+# getting-started-rxjs
